@@ -8,12 +8,5 @@ export interface serverVideoInfo {
 export interface clientVideoInfo {
     videoId:string|null,
     isPlaying:Boolean,
-    currentTimeStamp:number|null
-}
-
-export interface infoResponseFromSocket {
-    videoId:string|null,
-    startedAt:number|null,
-    isPlaying:Boolean,
-    serverTimeNow: number
+    startedAt:number
 }

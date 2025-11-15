@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "../lib/enum.ts", "../lib/interface.ts", "../lib/types.ts"  ],
   "exclude": ["node_modules"]
 }

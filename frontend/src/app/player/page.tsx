@@ -1,24 +1,35 @@
 "use client"
-import React from 'react'
-import { videoInfoT } from "@/utils/interface"
+// import { vie } from "@/utils/interface"
 import { redirect } from "next/navigation"
 import { useEffect, useState } from "react"
-// import YouTube from "react-youtube"
 import ReactPlayer from 'react-player'
-
+// import { socket } from '../page'
 
 export default function Player(){
-    const [videoInfo, setVideoInfo] = useState<videoInfoT|null>(null)
+    // const [videoInfo,  setVideoInfo] = useState<videoInfoT|null>(null)
 
-    useEffect(()=>{
-        //check if url set on socket.io or not
-        // if(!no-video-set){
-        //     redirect("/")
-        // } else{
-        //     //get which video's all details
-        //     setVideoInfo()
-        // }
-    },[])
+    // useEffect(()=>{
+    //     socket.emit("info");
+
+    //     socket.on("info",(data:any)=>{
+    //         if(!data.videoId){
+    //             redirect('/')
+    //             return;
+    //         }
+    //         setVideoInfo(data)
+    //     })
+
+    //     socket.on("update",(data:any)=>{
+    //         if(!data.videoId){
+    //             redirect('/')
+    //             return;
+    //         }
+    //         setVideoInfo(prev =>({...prev, ...data}))
+    //     })
+
+    //     return ()=>{ socket.off('info')}
+
+    // },[])
     return <>
         <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans ">
             { 

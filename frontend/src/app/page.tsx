@@ -1,6 +1,6 @@
 
+import { io } from "socket.io-client";
 import HomePage from "@/ui/components/HomePage";
-import Image from "next/image";
 
 export default function Home() {
   return (

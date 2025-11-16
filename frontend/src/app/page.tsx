@@ -1,5 +1,4 @@
 
-import { io } from "socket.io-client";
 import HomePage from "@/ui/components/HomePage";
 
 export default function Home() {

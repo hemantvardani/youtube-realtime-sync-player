@@ -1,7 +1,8 @@
-function extractVideoId(url:string):{videoId:string|null,skipBy:number} {
-
-    if(url.startsWith("https://www.youtube.com/watch/")){
-        const urlParams = new URLSearchParams(url)
+export function extractVideoId(url:string):{videoId:string|null,skipBy:number} {
+    console.log(url,"url")
+    
+    if(url.startsWith("https://www.youtube.com/watch")){
+        const urlParams = new URL(url).searchParams
 
         return {
             videoId: urlParams.get("v") ?? null,
@@ -10,7 +11,8 @@ function extractVideoId(url:string):{videoId:string|null,skipBy:number} {
     }
 
     if(url.startsWith("https://youtu.be/")){
-        const videoId = url.replace("https://youtu.be/","")
+        const urlParams = new URL(url).searchParams
+        const videoId = urlParams.get("v")
         return {
             videoId, 
             skipBy:  0

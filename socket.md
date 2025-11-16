@@ -5,12 +5,19 @@
     skipBy:number
 }
 
-### INFO
-
+UPDATE= "UPDATE"
+RESET
+PLAY
+PAUSE
+SEEK
 
 
 ## To Client
-### GET-INFO
-{
-    
-}
+
+
+INIT 
+UPDATE
+RESET
+PLAY
+PAUSE
+SEEK

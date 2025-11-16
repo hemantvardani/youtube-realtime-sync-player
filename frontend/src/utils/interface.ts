@@ -11,9 +11,9 @@ export interface clientVideoInfo {
     currentTimeStamp:number|null
 }
 
-export interface infoResponseFromSocket {
+export interface initResponseFromSocket {
     videoId:string|null,
     startedAt:number|null,
     isPlaying:Boolean,
-    serverTimeNow: number
+    serverTimeNow: number|null
 }

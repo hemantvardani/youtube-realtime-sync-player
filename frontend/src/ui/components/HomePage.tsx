@@ -18,8 +18,9 @@ import { redirect } from "next/navigation";
 import { AlertCircleIcon, ArrowRightIcon, Info } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "../shadcn/components/ui/alert";
-import { socketServiceInstance } from "@/utils/socket";
+import { socketServiceInstance } from "@/utils/socket/index";
 import { useSelector } from "react-redux";
+import { extractVideoId } from "@/utils/videoPlayer";
  
 export default function () {
 
@@ -40,24 +41,24 @@ export default function () {
   }
 
   const initializeVideoPlayer =(videoId:string)=>{
-    socketServiceInstance.pushUpdates({action:"init", data: {videoId }})
+    socketServiceInstance.initVideo({videoId})
   }
 
   useEffect(()=>{
     if(player.videoId) redirect('\player')
   },[player.videoId])
   
-  useEffect(()=>{
-    socketServiceInstance.requestInfo();
-  },[])
+  // useEffect(()=>{
+  //   socketServiceInstance.requestInfo();
+  // },[])
 
   return (
     <>
     <div>
       <div className="flex gap-2">
         <InputGroup>
-          <InputGroupInput placeholder="example.com" className="!pl-1" onSubmit={()=>onSubmit}/>
-          <InputGroupAddon onChange={(e: React.ChangeEvent<HTMLInputElement>)=>{setUrl("https://" + e.target.value)}}>
+          <InputGroupInput placeholder="example.com" onChange={(e: React.ChangeEvent<HTMLInputElement>)=>{console.log("slf"); setUrl("https://" + e.target.value)}} className="!pl-1" onSubmit={()=>onSubmit}/>
+          <InputGroupAddon >
             <InputGroupText>https://</InputGroupText>
           </InputGroupAddon>
           <InputGroupAddon align="inline-end">

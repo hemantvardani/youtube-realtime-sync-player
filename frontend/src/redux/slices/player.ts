@@ -4,17 +4,36 @@ const initialState = {
     videoId:null,
     startAt:null,
     isPlaying:false,
-    currentVideoTimeStamp:null,
+    currentTimeStamp:null,
     serverTime:null
 }
 const playerSlice = createSlice({
     name:'player',
     initialState,
     reducers:{
-        initVideo(state, data){  }
+        initVideo(state, action){ 
+            state.videoId=action.payload.videoId;
+            state.currentTimeStamp =  action.payload.currentTimeStamp;
+            state.isPlaying= action.payload.isPlaying
+         },
+        unsetVideo(state){ 
+            state.videoId=null;
+            state.startAt=null
+            state.isPlaying=false
+            state.currentTimeStamp=null
+            state.serverTime=null
+         },
+        playVideo(state){
+            state.isPlaying=true
+        },
+        pauseVideo(state){
+            state.isPlaying=false
+        }
     }
 })
 
-export const { } = playerSlice.actions;
+export const { initVideo , unsetVideo , playVideo, pauseVideo} = playerSlice.actions;
 
 export const playerReducer = playerSlice.reducer;
+
+

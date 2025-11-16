@@ -32,30 +32,29 @@ export function handleResetFromClient(io:any){
     videoInfo.startedAt = null;
     videoInfo.isPlaying = false ;
 
-    const info = getServerCurrentInfo();
-    const infoToBeSent = {...info, serverTimeNow: new Date().getTime() }
     io.emit(serverToClientEvent.RESET);
 
 }
 
-export function handlePlayFromClient(io:any){
+export function handlePlayFromClient(io:any, socket: Socket){
 
     videoInfo.isPlaying = true ;
-
-    const info = getServerCurrentInfo();
-    const infoToBeSent = {...info, serverTimeNow: new Date().getTime() }
+ 
     io.emit(serverToClientEvent.PLAY);
 
 }
 
-export function handlePauseFromClient(io:any){
+export function handlePauseFromClient(io:any, socket: Socket){
 
     videoInfo.isPlaying = false ;
 
-    const info = getServerCurrentInfo();
-    const infoToBeSent = {...info, serverTimeNow: new Date().getTime() }
     io.emit(serverToClientEvent.PAUSE);
+}
 
+export function handleSeekFromClient(io:any, socket: Socket, seekTo:number){
+
+    const infoToBeSent = { seekTo }
+    io.emit(serverToClientEvent.SEEK, infoToBeSent);
 }
 
 

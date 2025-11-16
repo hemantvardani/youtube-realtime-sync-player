@@ -1,6 +1,9 @@
+import mitt from "mitt";
 import { initResponseFromSocket } from "../interface";
 import { initVideo, pauseVideo, playVideo, unsetVideo } from "@/redux/slices/player";
 import { store } from "@/redux/store";
+
+export const eventBus= mitt()
 
 export function handleInitResponseFromServer(data:initResponseFromSocket){
       
@@ -36,3 +39,10 @@ export function handlePauseFromServer(){
 
     store.dispatch(pauseVideo())
 }
+
+export function handleSeekFromServer(data:any){
+    console.log("emitted: INTERNAL_SEEK_TO")
+    eventBus.emit("INTERNAL_SEEK_TO",data)
+    
+}
+

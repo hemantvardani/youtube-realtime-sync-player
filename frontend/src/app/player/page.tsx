@@ -1,42 +1,45 @@
 "use client"
+import YouTubePlayer from "@/ui/components/YouTubePlayer"
 import { Button } from "@/ui/shadcn/components/ui/button"
 import { ButtonGroup } from "@/ui/shadcn/components/ui/button-group"
 import { socketServiceInstance } from "@/utils/socket"
+import { eventBus } from "@/utils/socket/service"
 import { ArrowLeftIcon } from "lucide-react"
 // import { vie } from "@/utils/interface"
 import { redirect } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import ReactPlayer from 'react-player'
 import { useSelector } from "react-redux"
 // import { socket } from '../page'
 
 export default function Player(){
     const player = useSelector((state:any)=> state.player)
+    const [showVideoPlayer, setShowVideoPlayer] = useState(false);
+    const playerRef = useRef<any>(null)
 
     const handleBack =()=>{
         console.log("go back clicked")
         socketServiceInstance.resetVideo()
     }
-
-    const handlePlay=()=>{
-        console.log("handlePlay")
-        socketServiceInstance.play()
-    }
-
-    const handlePause=()=>{
-        console.log("handlePause")
-        socketServiceInstance.pause()
-    }
-
-    // const handleSeeked=()=>{
-    //     console.log("handleSeeked")
-    //     socketServiceInstance.seeked()
-    // }
     
+    useEffect(()=>{
+        const handler = (data:any)=>{
+            if( playerRef?.current){
+                playerRef.current.seekTo(data.seekTo)
+            }
+        }
+        eventBus.on("INTERNAL_SEEK_TO", handler)
+
+        return ()=>{ eventBus.off("INTERNAL_SEEK_TO", handler)}
+    },[])
 
     useEffect(()=>{
         if(!player.videoId){
             redirect("/")
+        }else{
+            setTimeout(()=>{
+                setShowVideoPlayer(true)
+            },2000)
         }
     },[player.videoId])
     
@@ -50,15 +53,9 @@ export default function Player(){
                     </ButtonGroup>
                 </div>
                 <div className="">
-                    <ReactPlayer src={`https://www.youtube.com/watch?v=${player.videoId}`} 
-                    controls={true} 
-                    height={360}
-                    width={640}
-                    playing={player.isPlaying}
-                    onPlay={handlePlay}
-                    onPause={handlePause}
-                    // onSeeked={handleSeeked}
-                     />
+                                       
+                    {player.videoId && showVideoPlayer && <YouTubePlayer videoId={player.videoId}/>}
+                   
                 </div>
                 <div>
 

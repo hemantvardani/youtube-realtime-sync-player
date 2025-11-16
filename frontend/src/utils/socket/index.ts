@@ -1,7 +1,7 @@
 import { io , Socket} from "socket.io-client";
 import { clientToServerEvent, serverToClientEvent } from "../enum";
 import { initResponseFromSocket } from "../interface";
-import { handleInitResponseFromServer, handlePauseFromServer, handlePlayFromServer, handleResetResponseFromServer } from "./service";
+import { handleInitResponseFromServer, handlePauseFromServer, handlePlayFromServer, handleResetResponseFromServer, handleSeekFromServer } from "./service";
 
 export class SocketService {
     private socket: Socket;
@@ -41,6 +41,12 @@ export class SocketService {
             handlePauseFromServer()
         })
 
+        this.socket.on(serverToClientEvent.SEEK,(data)=>{
+            console.log("Event received",serverToClientEvent.SEEK);
+
+            handleSeekFromServer(data)
+        })
+
 
 
 
@@ -69,6 +75,12 @@ export class SocketService {
         console.log("pause")
         this.socket.emit(clientToServerEvent.PAUSE)
     }
+
+    seeked(data:{seekTo:number}){
+        console.log("seeked", data)
+        this.socket.emit(clientToServerEvent.SEEK, data)
+    }
+
 
 }
 

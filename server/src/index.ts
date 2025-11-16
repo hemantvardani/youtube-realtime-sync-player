@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import { createServer } from "http";
 import { clientToServerEvent, serverToClientEvent } from "./utils/enum.js";
-import { getServerCurrentInfo, handleInitFromClient, handleNewConnectionJoined, handlePauseFromClient, handlePlayFromClient, handleResetFromClient } from "./player.js";
+import { getServerCurrentInfo, handleInitFromClient, handleNewConnectionJoined, handlePauseFromClient, handlePlayFromClient, handleResetFromClient, handleSeekFromClient } from "./player.js";
 // import type { responseFromSocket } from "./utils/type.js";
 
  
@@ -28,12 +28,17 @@ io.on("connection",(socket)=>{
 
     socket.on(clientToServerEvent.PLAY,()=>{
       console.log("Received", clientToServerEvent.PLAY)
-      handlePlayFromClient(io);
+      handlePlayFromClient(io, socket);
     })
 
     socket.on(clientToServerEvent.PAUSE,()=>{
       console.log("Received", clientToServerEvent.PAUSE)
-      handlePauseFromClient(io);
+      handlePauseFromClient(io, socket);
+    })
+
+    socket.on(clientToServerEvent.SEEK,(data)=>{
+      console.log("Received", clientToServerEvent.SEEK)
+      handleSeekFromClient(io, socket, data.seekTo);
     })
     
 

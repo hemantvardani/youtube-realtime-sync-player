@@ -6,7 +6,9 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "npx tsc && node dist/index.js"
+    "build":"cd server && npm i && npx tsc",
+    "dev": "npx tsc && node dist/index.js",
+    "prod": "node dist/index.js"
   },
   "author": "",
   "license": "ISC",

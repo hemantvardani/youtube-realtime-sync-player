@@ -15,7 +15,9 @@ const corsOptions = {
 
 const httpServer = createServer();
 const io = new Server(httpServer, {
-  cors: corsOptions
+  cors: corsOptions,
+  transports: ['polling', 'websocket'], // Support both transports
+  allowEIO3: true // Allow Engine.IO v3 clients for compatibility
 });
 
 io.on("connection",(socket)=>{
@@ -50,7 +52,9 @@ io.on("connection",(socket)=>{
 
 })
 
-const PORT = process.env.PORT || 4000;
-httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const PORT = process.env.PORT ? parseInt(process.env.PORT) : 4000;
+const HOST = process.env.HOST || '0.0.0.0'; // Bind to all interfaces for Railway
+httpServer.listen(PORT, HOST, () => {
+  console.log(`Server running on ${HOST}:${PORT}`);
+  console.log(`Socket.io transports enabled: polling, websocket`);
 });

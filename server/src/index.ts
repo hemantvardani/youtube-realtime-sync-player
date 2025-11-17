@@ -4,11 +4,12 @@ import { clientToServerEvent, serverToClientEvent } from "./utils/enum.js";
 import { getServerCurrentInfo, handleInitFromClient, handleNewConnectionJoined, handlePauseFromClient, handlePlayFromClient, handleResetFromClient, handleSeekFromClient } from "./player.js";
 // import type { responseFromSocket } from "./utils/type.js";
 
- 
+const ALLOWED_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
+
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: ["http://localhost:3000"]
+    origin: [ALLOWED_ORIGIN]
   }
 });
 

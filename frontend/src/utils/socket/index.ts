@@ -9,7 +9,11 @@ export class SocketService {
     constructor(){
          // Fallback to localhost if environment variable is not set
          const socketUrl = process.env.NEXT_PUBLIC_BASE_API_URL || "http://localhost:4000";
-         this.socket = io(socketUrl);
+         this.socket = io(socketUrl,{
+            withCredentials: true,
+            extraHeaders: {
+              "my-custom-header": "abcd"
+            }});
 
          this.defineListeners()
     }

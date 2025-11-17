@@ -9,7 +9,8 @@ const ALLOWED_ORIGIN = process.env.CLIENT_ORIGIN || "http://localhost:3000";
 const httpServer = createServer();
 const io = new Server(httpServer, {
   cors: {
-    origin: [ALLOWED_ORIGIN]
+    origin: [ALLOWED_ORIGIN],
+    credentials: true
   }
 });
 

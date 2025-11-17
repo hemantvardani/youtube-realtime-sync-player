@@ -26,14 +26,14 @@ io.on("connection",(socket)=>{
       handleResetFromClient(io);
     })
 
-    socket.on(clientToServerEvent.PLAY,()=>{
-      console.log("Received", clientToServerEvent.PLAY)
-      handlePlayFromClient(io, socket);
+    socket.on(clientToServerEvent.PLAY,(data)=>{
+      console.log("Received", clientToServerEvent.PLAY, data)
+      handlePlayFromClient(io, socket, data?.currentTime);
     })
 
-    socket.on(clientToServerEvent.PAUSE,()=>{
-      console.log("Received", clientToServerEvent.PAUSE)
-      handlePauseFromClient(io, socket);
+    socket.on(clientToServerEvent.PAUSE,(data)=>{
+      console.log("Received", clientToServerEvent.PAUSE, data)
+      handlePauseFromClient(io, socket, data?.currentTime);
     })
 
     socket.on(clientToServerEvent.SEEK,(data)=>{

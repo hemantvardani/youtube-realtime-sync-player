@@ -28,6 +28,16 @@ export default function () {
   const [showError, setShowError] = useState<boolean>(false);
   const player = useSelector((state:any) => state.player)
 
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    // Only prepend https:// if URL doesn't already start with http:// or https://
+    if (inputValue && !inputValue.startsWith("http://") && !inputValue.startsWith("https://")) {
+      setUrl("https://" + inputValue);
+    } else {
+      setUrl(inputValue);
+    }
+  }
+
   const onSubmit =()=>{
     setShowError(false)
     const {videoId, skipBy} = extractVideoId(url)
@@ -45,7 +55,7 @@ export default function () {
   }
 
   useEffect(()=>{
-    if(player.videoId) redirect('\player')
+    if(player.videoId) redirect('/player')
   },[player.videoId])
   
   // useEffect(()=>{
@@ -57,7 +67,7 @@ export default function () {
     <div>
       <div className="flex gap-2">
         <InputGroup>
-          <InputGroupInput placeholder="example.com" onChange={(e: React.ChangeEvent<HTMLInputElement>)=>{console.log("slf"); setUrl("https://" + e.target.value)}} className="!pl-1" onSubmit={()=>onSubmit}/>
+          <InputGroupInput placeholder="example.com" onChange={handleUrlChange} className="!pl-1" onSubmit={()=>onSubmit}/>
           <InputGroupAddon >
             <InputGroupText>https://</InputGroupText>
           </InputGroupAddon>

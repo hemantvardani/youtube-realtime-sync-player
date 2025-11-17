@@ -7,7 +7,9 @@ export class SocketService {
     private socket: Socket;
 
     constructor(){
-         this.socket = io(process.env.NEXT_PUBLIC_BASE_API_URL);
+         // Fallback to localhost if environment variable is not set
+         const socketUrl = process.env.NEXT_PUBLIC_BASE_API_URL || "http://localhost:4000";
+         this.socket = io(socketUrl);
 
          this.defineListeners()
     }
@@ -29,16 +31,16 @@ export class SocketService {
             handleInitResponseFromServer(data)
         })
 
-        this.socket.on(serverToClientEvent.PLAY,()=>{
-            console.log("Event received",serverToClientEvent.PLAY);
+        this.socket.on(serverToClientEvent.PLAY,(data)=>{
+            console.log("Event received",serverToClientEvent.PLAY, data);
 
-            handlePlayFromServer()
+            handlePlayFromServer(data)
         })
 
-        this.socket.on(serverToClientEvent.PAUSE,()=>{
-            console.log("Event received",serverToClientEvent.PAUSE);
+        this.socket.on(serverToClientEvent.PAUSE,(data)=>{
+            console.log("Event received",serverToClientEvent.PAUSE, data);
 
-            handlePauseFromServer()
+            handlePauseFromServer(data)
         })
 
         this.socket.on(serverToClientEvent.SEEK,(data)=>{
@@ -66,14 +68,14 @@ export class SocketService {
         this.socket.emit(clientToServerEvent.RESET)
     }
 
-    play(){
-        console.log("play")
-        this.socket.emit(clientToServerEvent.PLAY)
+    play(currentTime?: number){
+        console.log("play", currentTime)
+        this.socket.emit(clientToServerEvent.PLAY, { currentTime: currentTime ?? 0 })
     }
 
-    pause(){
-        console.log("pause")
-        this.socket.emit(clientToServerEvent.PAUSE)
+    pause(currentTime?: number){
+        console.log("pause", currentTime)
+        this.socket.emit(clientToServerEvent.PAUSE, { currentTime: currentTime ?? 0 })
     }
 
     seeked(data:{seekTo:number}){

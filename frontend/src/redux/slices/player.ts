@@ -14,7 +14,8 @@ const playerSlice = createSlice({
         initVideo(state, action){ 
             state.videoId=action.payload.videoId;
             state.currentTimeStamp =  action.payload.currentTimeStamp;
-            state.isPlaying= action.payload.isPlaying
+            state.isPlaying= action.payload.isPlaying;
+            state.serverTime = action.payload.serverTime ?? null;
          },
         unsetVideo(state){ 
             state.videoId=null;
@@ -28,11 +29,17 @@ const playerSlice = createSlice({
         },
         pauseVideo(state){
             state.isPlaying=false
+        },
+        updateCurrentTime(state, action){
+            state.currentTimeStamp = action.payload.currentTimeStamp ?? state.currentTimeStamp;
+            if (action.payload.serverTime !== undefined) {
+                state.serverTime = action.payload.serverTime;
+            }
         }
     }
 })
 
-export const { initVideo , unsetVideo , playVideo, pauseVideo} = playerSlice.actions;
+export const { initVideo , unsetVideo , playVideo, pauseVideo, updateCurrentTime} = playerSlice.actions;
 
 export const playerReducer = playerSlice.reducer;
 

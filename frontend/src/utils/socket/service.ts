@@ -2,6 +2,7 @@ import mitt from "mitt";
 import { initResponseFromSocket } from "../interface";
 import { initVideo, pauseVideo, playVideo, unsetVideo, updateCurrentTime } from "@/redux/slices/player";
 import { store } from "@/redux/store";
+import logger from "@/utils/logger";
 
 export const eventBus= mitt()
 
@@ -64,7 +65,7 @@ export function handlePauseFromServer(data?: any){
 }
 
 export function handleSeekFromServer(data:any){
-    console.log("emitted: INTERNAL_SEEK_TO")
+    logger.log("emitted: INTERNAL_SEEK_TO")
 
     const newTime =
         data && data.currentTimeStamp !== undefined && data.currentTimeStamp !== null

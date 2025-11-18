@@ -3,6 +3,7 @@ import YouTubePlayer from "@/ui/components/YouTubePlayer"
 import { Button } from "@/ui/shadcn/components/ui/button"
 import { ButtonGroup } from "@/ui/shadcn/components/ui/button-group"
 import { socketServiceInstance } from "@/utils/socket"
+import logger from "@/utils/logger"
 import { ArrowLeftIcon } from "lucide-react"
 import { redirect } from "next/navigation"
 import { useEffect } from "react"
@@ -12,7 +13,7 @@ export default function Player(){
     const player = useSelector((state:any)=> state.player)
 
     const handleBack =()=>{
-        console.log("go back clicked")
+        logger.log("go back clicked")
         socketServiceInstance.resetVideo()
     }
 

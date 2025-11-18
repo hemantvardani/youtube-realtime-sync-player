@@ -2,6 +2,7 @@ import { io , Socket} from "socket.io-client";
 import { clientToServerEvent, serverToClientEvent } from "../enum";
 import { initResponseFromSocket } from "../interface";
 import { handleInitResponseFromServer, handlePauseFromServer, handlePlayFromServer, handleResetResponseFromServer, handleSeekFromServer } from "./service";
+import logger from "@/utils/logger";
 
 export class SocketService {
     private socket: Socket;
@@ -23,36 +24,36 @@ export class SocketService {
     }
 
     private defineListeners(){
-        this.socket.on("connect",()=>{console.log("connected")});
-        this.socket.on("disconnect",()=>{console.log("disconnected")});
+        this.socket.on("connect",()=>{logger.log("connected")});
+        this.socket.on("disconnect",()=>{logger.log("disconnected")});
 
         this.socket.on(serverToClientEvent.RESET,()=>{
-            console.log("Event received",serverToClientEvent.RESET);
+            logger.log("Event received",serverToClientEvent.RESET);
 
             handleResetResponseFromServer()
         })
 
         this.socket.on(serverToClientEvent.INIT,(data: initResponseFromSocket)=>{
-            console.log("Event received",serverToClientEvent.INIT);
-            console.log("and data is ", data);
+            logger.log("Event received",serverToClientEvent.INIT);
+            logger.log("and data is ", data);
 
             handleInitResponseFromServer(data)
         })
 
         this.socket.on(serverToClientEvent.PLAY,(data)=>{
-            console.log("Event received",serverToClientEvent.PLAY, data);
+            logger.log("Event received",serverToClientEvent.PLAY, data);
 
             handlePlayFromServer(data)
         })
 
         this.socket.on(serverToClientEvent.PAUSE,(data)=>{
-            console.log("Event received",serverToClientEvent.PAUSE, data);
+            logger.log("Event received",serverToClientEvent.PAUSE, data);
 
             handlePauseFromServer(data)
         })
 
         this.socket.on(serverToClientEvent.SEEK,(data)=>{
-            console.log("Event received",serverToClientEvent.SEEK);
+            logger.log("Event received",serverToClientEvent.SEEK);
 
             handleSeekFromServer(data)
         })
@@ -72,22 +73,22 @@ export class SocketService {
     }
 
     resetVideo(){
-        console.log("resetVideo")
+        logger.log("resetVideo")
         this.socket.emit(clientToServerEvent.RESET)
     }
 
     play(currentTime?: number){
-        console.log("play", currentTime)
+        logger.log("play", currentTime)
         this.socket.emit(clientToServerEvent.PLAY, { currentTime: currentTime ?? 0 })
     }
 
     pause(currentTime?: number){
-        console.log("pause", currentTime)
+        logger.log("pause", currentTime)
         this.socket.emit(clientToServerEvent.PAUSE, { currentTime: currentTime ?? 0 })
     }
 
     seeked(data:{seekTo:number}){
-        console.log("seeked", data)
+        logger.log("seeked", data)
         this.socket.emit(clientToServerEvent.SEEK, data)
     }
 

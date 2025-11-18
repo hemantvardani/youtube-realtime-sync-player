@@ -1,5 +1,7 @@
+import logger from "./logger";
+
 export function extractVideoId(url:string):{videoId:string|null,skipBy:number} {
-    console.log(url,"url")
+    logger.log(url,"url")
     
     try {
         // Handle www.youtube.com/watch format
@@ -43,7 +45,7 @@ export function extractVideoId(url:string):{videoId:string|null,skipBy:number} {
             }
         }
     } catch (error) {
-        console.error("Error parsing URL:", error)
+        logger.error("Error parsing URL:", error)
     }
 
     return {

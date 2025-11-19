@@ -341,7 +341,12 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
   // Handle tab visibility changes and window focus - sync player when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
+      playerRef.current.mute()
+
       if (!document.hidden && playerRef.current && player.videoId) {
+
+          playerRef.current.unMute()
+        
         logger.log('Tab became visible, syncing player state');
         // Small delay to ensure player is ready
         setTimeout(() => {

@@ -49,9 +49,7 @@ export function handleResetFromClient(io:any){
 export function handlePlayFromClient(io:any, socket: Socket, currentTime?: number){
     const now = new Date().getTime();
     
-    const baseTime = currentTime !== undefined && currentTime !== null
-        ? currentTime
-        : getCurrentPlaybackPosition(now);
+    const baseTime = getCurrentPlaybackPosition(now);
 
     videoInfo.currentPosition = baseTime;
     videoInfo.startedAt = now - (baseTime * 1000);
@@ -71,9 +69,7 @@ export function handlePlayFromClient(io:any, socket: Socket, currentTime?: numbe
 export function handlePauseFromClient(io:any, socket: Socket, currentTime?: number){
     const now = new Date().getTime();
     
-    const baseTime = currentTime !== undefined && currentTime !== null
-        ? currentTime
-        : getCurrentPlaybackPosition(now);
+    const baseTime = getCurrentPlaybackPosition(now);
 
     videoInfo.currentPosition = baseTime;
     videoInfo.startedAt = null;

@@ -11,8 +11,8 @@ export class SocketService {
          // Fallback to localhost if environment variable is not set
          const socketUrl = process.env.NEXT_PUBLIC_BASE_API_URL || "http://localhost:4000";
          this.socket = io(socketUrl, {
-            // withCredentials: false, // Set to false when server uses origin: "*"
-            transports: ['polling', 'websocket'], // Try polling first, then websocket
+            withCredentials: false, // Set to false when server uses origin: "*"
+            // transports: ['polling', 'websocket'], // Try polling first, then websocket
             upgrade: true,
             rememberUpgrade: false,
             reconnection: true,

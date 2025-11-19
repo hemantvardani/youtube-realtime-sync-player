@@ -27,14 +27,100 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
   // Use a static ID to avoid hydration mismatch - this is a client component so it's safe
   const containerId = 'yt-player-container'
 
-  const onPlayClick=()=>{
-    if (playerRef.current && typeof playerRef.current.unMute === 'function') {
-      try {
-        playerRef.current.unMute();
-      } catch (error) {
-        logger.warn('Error unmuting player:', error);
-      }
+  const releaseNativeEventSuppression = () => {
+    suppressNativeEventsRef.current = false
+    if (suppressTimeoutRef.current) {
+      clearTimeout(suppressTimeoutRef.current)
+      suppressTimeoutRef.current = null
     }
+  }
+
+  const suppressNativeEvents = (duration = 1500) => {
+    suppressNativeEventsRef.current = true
+    if (suppressTimeoutRef.current) {
+      clearTimeout(suppressTimeoutRef.current)
+    }
+    suppressTimeoutRef.current = setTimeout(() => {
+      suppressNativeEventsRef.current = false
+      suppressTimeoutRef.current = null
+    }, duration)
+  }
+
+  const callPlayerMethod = (method: 'playVideo' | 'pauseVideo' | 'seekTo' | 'unMute', args: any[] = []) => {
+    const currentPlayer = playerRef.current as any
+    if (!currentPlayer || typeof currentPlayer[method] !== 'function') {
+      logger.warn(`Player method ${method} is not available`)
+      return false
+    }
+    try {
+      currentPlayer[method](...args)
+      return true
+    } catch (error) {
+      logger.warn(`Error calling player method ${method}:`, error)
+      return false
+    }
+  }
+
+  const schedulePlayRetry = (delay: number) => {
+    setTimeout(() => {
+      if (
+        playerRef.current &&
+        typeof playerRef.current.getPlayerState === 'function'
+      ) {
+        const state = playerRef.current.getPlayerState()
+        const isActuallyPlaying =
+          state === YTPlayerState.PLAYING || state === YTPlayerState.BUFFERING
+        if (!isActuallyPlaying && playerStateRef.current.isPlaying) {
+          syncPlay()
+        }
+      }
+    }, delay)
+  }
+
+  const syncPlay = (options?: { retryDelay?: number }) => {
+    if (!playerRef.current) {
+      logger.warn('Cannot play - player not ready')
+      return false
+    }
+    suppressNativeEvents()
+    const success = callPlayerMethod('playVideo')
+    if (!success) {
+      releaseNativeEventSuppression()
+      return false
+    }
+    if (options?.retryDelay) {
+      schedulePlayRetry(options.retryDelay)
+    }
+    return true
+  }
+
+  const syncPause = () => {
+    if (!playerRef.current) {
+      logger.warn('Cannot pause - player not ready')
+      return false
+    }
+    suppressNativeEvents()
+    const success = callPlayerMethod('pauseVideo')
+    if (!success) {
+      releaseNativeEventSuppression()
+    }
+    return success
+  }
+
+  const syncSeek = (time: number, allowSeekAhead = true) => {
+    if (time === undefined || time === null || !playerRef.current) {
+      return false
+    }
+    suppressNativeEvents()
+    const success = callPlayerMethod('seekTo', [time, allowSeekAhead])
+    if (!success) {
+      releaseNativeEventSuppression()
+    }
+    return success
+  }
+
+  const onPlayClick=()=>{
+    callPlayerMethod('unMute')
     const currentTime = handleGetTime();
     socketServiceInstance.play(currentTime)
   }
@@ -130,37 +216,17 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
               
               // Seek to initial position if available (Bug #7 fix)
               if (player.currentTimeStamp !== null && player.currentTimeStamp !== undefined) {
-                suppressNativeEventsRef.current = true;
-                if (suppressTimeoutRef.current) {
-                  clearTimeout(suppressTimeoutRef.current);
+                if (!syncSeek(player.currentTimeStamp, true)) {
+                  logger.warn('Error seeking on ready');
                 }
-                suppressTimeoutRef.current = setTimeout(() => {
-                  suppressNativeEventsRef.current = false;
-                  suppressTimeoutRef.current = null;
-                }, 1500);
-                event.target.seekTo(player.currentTimeStamp, true);
               }
               
               // Sync player state with Redux state after a short delay to ensure player is ready
               setTimeout(() => {
                 if (player.isPlaying) {
-                  // If Redux says playing, make sure player is playing
-                  if (typeof event.target.playVideo === 'function') {
-                    try {
-                      event.target.playVideo();
-                    } catch (error) {
-                      logger.warn('Error syncing play state:', error);
-                    }
-                  }
+                  syncPlay({ retryDelay: 300 });
                 } else {
-                  // If Redux says paused, make sure player is paused
-                  if (typeof event.target.pauseVideo === 'function') {
-                    try {
-                      event.target.pauseVideo();
-                    } catch (error) {
-                      logger.warn('Error syncing pause state:', error);
-                    }
-                  }
+                  syncPause();
                 }
               }, 100);
             },
@@ -231,62 +297,14 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
     if (player.isPlaying) {
       if (!isActuallyPlaying) {
         logger.log('Redux says playing but player is not - forcing play');
-        if (typeof playerRef.current.playVideo === 'function') {
-          try {
-            // Suppress native events while we sync
-            suppressNativeEventsRef.current = true;
-            if (suppressTimeoutRef.current) {
-              clearTimeout(suppressTimeoutRef.current);
-            }
-            suppressTimeoutRef.current = setTimeout(() => {
-              suppressNativeEventsRef.current = false;
-              suppressTimeoutRef.current = null;
-            }, 1500); // Suppress for 1.5 seconds
-            
-            playerRef.current.playVideo();
-            // Double-check after a short delay
-            setTimeout(() => {
-              if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
-                try {
-                  const state = playerRef.current.getPlayerState();
-                  if (state !== 1 && state !== 3 && player.isPlaying) {
-                    logger.log('Player still not playing, retrying...');
-                    playerRef.current.playVideo();
-                  }
-                } catch (error) {
-                  // Ignore errors
-                }
-              }
-            }, 500);
-          } catch (error) {
-            logger.warn('Error playing video:', error);
-            suppressNativeEventsRef.current = false;
-          }
-        }
+        syncPlay({ retryDelay: 500 });
       } else {
           logger.log('Already playing, no action needed');
         }
     } else {
       if (isActuallyPlaying) {
         logger.log('Redux says paused but player is playing - forcing pause');
-        if (typeof playerRef.current.pauseVideo === 'function') {
-          try {
-            // Suppress native events while we sync
-            suppressNativeEventsRef.current = true;
-            if (suppressTimeoutRef.current) {
-              clearTimeout(suppressTimeoutRef.current);
-            }
-            suppressTimeoutRef.current = setTimeout(() => {
-              suppressNativeEventsRef.current = false;
-              suppressTimeoutRef.current = null;
-            }, 1500); // Suppress for 1.5 seconds
-            
-            playerRef.current.pauseVideo();
-          } catch (error) {
-            logger.warn('Error pausing video:', error);
-            suppressNativeEventsRef.current = false;
-          }
-        }
+        syncPause();
       } else {
         logger.log('Already paused, no action needed');
       }
@@ -312,57 +330,11 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
     const isActuallyPlaying = actualState === 1 || actualState === 3; // Playing or buffering
     
     if (player.isPlaying && !isActuallyPlaying) {
-      // Should be playing but isn't - force play
-      if (typeof playerRef.current.playVideo === 'function') {
-        try {
-          logger.log('Force syncing: playing video');
-          // Suppress native events while we sync
-          suppressNativeEventsRef.current = true;
-          if (suppressTimeoutRef.current) {
-            clearTimeout(suppressTimeoutRef.current);
-          }
-          suppressTimeoutRef.current = setTimeout(() => {
-            suppressNativeEventsRef.current = false;
-            suppressTimeoutRef.current = null;
-          }, 1500);
-          
-          playerRef.current.playVideo();
-          // Retry after delay to ensure it works
-          setTimeout(() => {
-            if (playerRef.current && typeof playerRef.current.getPlayerState === 'function') {
-              const state = playerRef.current.getPlayerState();
-              if (state !== 1 && state !== 3 && player.isPlaying) {
-                logger.log('Retrying play after sync check');
-                playerRef.current.playVideo();
-              }
-            }
-          }, 300);
-        } catch (error) {
-          logger.warn('Error force syncing play:', error);
-          suppressNativeEventsRef.current = false;
-        }
-      }
+      logger.log('Force syncing: playing video');
+      syncPlay({ retryDelay: 300 });
     } else if (!player.isPlaying && isActuallyPlaying) {
-      // Should be paused but is playing - force pause
-      if (typeof playerRef.current.pauseVideo === 'function') {
-        try {
-          logger.log('Force syncing: pausing video');
-          // Suppress native events while we sync
-          suppressNativeEventsRef.current = true;
-          if (suppressTimeoutRef.current) {
-            clearTimeout(suppressTimeoutRef.current);
-          }
-          suppressTimeoutRef.current = setTimeout(() => {
-            suppressNativeEventsRef.current = false;
-            suppressTimeoutRef.current = null;
-          }, 1500);
-          
-          playerRef.current.pauseVideo();
-        } catch (error) {
-          logger.warn('Error force syncing pause:', error);
-          suppressNativeEventsRef.current = false;
-        }
-      }
+      logger.log('Force syncing: pausing video');
+      syncPause();
     }
   };
 
@@ -425,21 +397,8 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
           // If drift is more than 1 second, seek to correct position
           if (drift > 1 && player.currentTimeStamp !== null && player.currentTimeStamp !== undefined) {
             logger.log(`Time drift detected: ${drift.toFixed(2)}s. Syncing to ${(expectedTime).toFixed(2)}s`);
-            if (typeof playerRef.current.seekTo === 'function') {
-              try {
-                suppressNativeEventsRef.current = true;
-                if (suppressTimeoutRef.current) {
-                  clearTimeout(suppressTimeoutRef.current);
-                }
-                suppressTimeoutRef.current = setTimeout(() => {
-                  suppressNativeEventsRef.current = false;
-                  suppressTimeoutRef.current = null;
-                }, 1500);
-                playerRef.current.seekTo(expectedTime, true);
-              } catch (error) {
-                logger.warn('Error correcting time drift:', error);
-                suppressNativeEventsRef.current = false;
-              }
+            if (!syncSeek(expectedTime, true)) {
+              logger.warn('Error correcting time drift');
             }
           }
         }
@@ -452,20 +411,8 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
   useEffect(()=>{
     const handler = (data:any)=>{
         if( playerRef?.current && typeof playerRef.current.seekTo === 'function'){
-            try {
-              // Suppress native events while we sync from server
-              suppressNativeEventsRef.current = true;
-              if (suppressTimeoutRef.current) {
-                clearTimeout(suppressTimeoutRef.current);
-              }
-              suppressTimeoutRef.current = setTimeout(() => {
-                suppressNativeEventsRef.current = false;
-                suppressTimeoutRef.current = null;
-              }, 1500);
-              playerRef.current.seekTo(data.seekTo, true)
-            } catch (error) {
-              logger.warn('Error seeking video:', error);
-              suppressNativeEventsRef.current = false;
+            if (!syncSeek(data.seekTo, true)) {
+              logger.warn('Error seeking video via internal event');
             }
         }
     }

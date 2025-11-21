@@ -4,7 +4,7 @@ import { eventBus } from "@/utils/socket/service"
 import { useEffect, useRef, useState } from "react"
 import { useSelector } from "react-redux"
 import { Button } from "../shadcn/components/ui/button"
-import { PauseIcon, PlayIcon, RewindIcon, FastForwardIcon } from "lucide-react"
+import { PauseIcon, PlayIcon, RewindIcon, FastForwardIcon, VolumeOff, Volume2Icon } from "lucide-react"
 import logger from "@/utils/logger"
 
 const YTPlayerState = {
@@ -338,6 +338,14 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
     }
   };
 
+  const toggleMute = ()=>{
+    if(playerRef.current.isMuted()){
+      playerRef.current.unMute()
+    } else{
+      playerRef.current.mute()
+    }
+  }
+
   // Handle tab visibility changes and window focus - sync player when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -439,23 +447,34 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
     return () => clearInterval(interval);
   }, []);
 
+  console.log(playerRef.current);
   return (
     <div className="flex flex-col items-center gap-4 mt-6">
       {/* YouTube player container */}
       <div id={containerId} className="rounded-md overflow-hidden"></div>
+      <div  className="relative flex w-[fit-content] items-center justify-center" >
+        <div className="flex items-center justify-center gap-3">
+          <Button onClick={()=>onSeekBackwardClick()}  variant="outline" size="icon" aria-label="Go Back 10s" className="w-15" ><RewindIcon/></Button>
+        {
+          player.isPlaying ?
+              <Button onClick={onPauseClick} variant="outline" className="w-15" ><PauseIcon/> </Button>
+          :
+              <Button onClick={onPlayClick} variant="outline" className="w-15"><PlayIcon/></Button>
 
-      <div className="flex gap-3">
-        <Button onClick={()=>onSeekBackwardClick()}  variant="outline" size="icon" aria-label="Go Back 10s" className="w-15" ><RewindIcon/></Button>
-       {
-        player.isPlaying ?
-            <Button onClick={onPauseClick} variant="outline" className="w-15" ><PauseIcon/> </Button>
-        :
-             <Button onClick={onPlayClick} variant="outline" className="w-15"><PlayIcon/></Button>
+        }
+          <Button onClick={()=>onSeekForwardClick()}  variant="outline" size="icon" ria-label="Go forward 10s" className="w-15" ><FastForwardIcon/> </Button>
+        </div>
 
-       }
-        <Button onClick={()=>onSeekForwardClick()}  variant="outline" size="icon" ria-label="Go forward 10s" className="w-15" ><FastForwardIcon/> </Button>
+          {
+            playerRef?.current && player.isPlaying &&
+            <Button className="absolute left-[-60] bg-transparent hover:bg-transparent" onClick={toggleMute}>
+              { 
+                playerRef.current.isMuted() ? < VolumeOff style={{color:"black"}}/> : <Volume2Icon style={{color:"black"}}/>
+              }
+            </Button>
+
+          }
       </div>
-
       <p className="text-black font-semibold">Current time: {currentTime} seconds</p>
     </div>
   )

@@ -49,7 +49,9 @@ export function handleResetFromClient(io:any){
 export function handlePlayFromClient(io:any, socket: Socket, currentTime?: number){
     const now = new Date().getTime();
     
-    const baseTime = getCurrentPlaybackPosition(now);
+    const baseTime = currentTime !== undefined && currentTime !== null
+    ? currentTime
+    : getCurrentPlaybackPosition(now);
 
     videoInfo.currentPosition = baseTime;
     videoInfo.startedAt = now - (baseTime * 1000);

@@ -92,6 +92,10 @@ export class SocketService {
         this.socket.emit(clientToServerEvent.SEEK, data)
     }
 
+    ended(){
+        logger.log("ended");
+        this.socket.emit(clientToServerEvent.ENDED)
+    }
 
 }
 

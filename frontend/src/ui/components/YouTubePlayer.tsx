@@ -129,6 +129,11 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
     const currentTime = handleGetTime();
     socketServiceInstance.pause(currentTime)
   }
+  
+  const onEnded =()=>{
+    logger.log("inside onEnded");
+    socketServiceInstance.ended()
+  }
 
   useEffect(()=>{
     playerStateRef.current = player;
@@ -182,6 +187,9 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
           socketServiceInstance.seeked({ seekTo: actualTime });
         }
       }
+    } else if (ytState === YTPlayerState.ENDED) {
+      logger.log("state chaged to ENDED")
+      onEnded()
     }
   }
 
@@ -447,7 +455,6 @@ export default function YouTubePlayer({ videoId }: { videoId: string }) {
     return () => clearInterval(interval);
   }, []);
 
-  console.log(playerRef.current);
   return (
     <div className="flex flex-col items-center gap-4 mt-6">
       {/* YouTube player container */}

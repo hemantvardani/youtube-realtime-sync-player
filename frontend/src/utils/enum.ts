@@ -4,7 +4,8 @@ export enum clientToServerEvent {
     RESET= "RESET",
     PLAY="PLAY",
     PAUSE="PAUSE",
-    SEEK="SEEK"
+    SEEK="SEEK",
+    ENDED="ENDED"
 }
 
 export enum serverToClientEvent {

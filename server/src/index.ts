@@ -36,7 +36,7 @@ io.on("connection",(socket)=>{
 
     socket.on(clientToServerEvent.PLAY,(data)=>{
       console.log("Received", clientToServerEvent.PLAY, data)
-      handlePlayFromClient(io, socket, data?.currentTime);
+      handlePlayFromClient(io, socket);
     })
 
     socket.on(clientToServerEvent.PAUSE,(data)=>{
@@ -47,6 +47,11 @@ io.on("connection",(socket)=>{
     socket.on(clientToServerEvent.SEEK,(data)=>{
       console.log("Received", clientToServerEvent.SEEK)
       handleSeekFromClient(io, socket, data.seekTo);
+    })
+    
+    socket.on(clientToServerEvent.ENDED,()=>{
+      console.log("Received", clientToServerEvent.ENDED)
+      handlePlayFromClient(io, socket, 0);
     })
     
 

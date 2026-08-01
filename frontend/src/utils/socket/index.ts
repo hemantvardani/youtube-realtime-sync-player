@@ -1,102 +1,149 @@
-import { io , Socket} from "socket.io-client";
+import { io, Socket } from "socket.io-client";
 import { clientToServerEvent, serverToClientEvent } from "../enum";
 import { initResponseFromSocket } from "../interface";
-import { handleInitResponseFromServer, handlePauseFromServer, handlePlayFromServer, handleResetResponseFromServer, handleSeekFromServer } from "./service";
+import {
+  handleInitResponseFromServer,
+  handlePauseFromServer,
+  handlePlayFromServer,
+  handleResetResponseFromServer,
+  handleSeekFromServer,
+} from "./service";
 import logger from "@/utils/logger";
+import { store } from "@/redux/store";
+import {
+  MAX_ATTEMPTS,
+  setConnected,
+  setConnecting,
+  setFailed,
+  setReconnecting,
+} from "@/redux/slices/connection";
 
 export class SocketService {
-    private socket: Socket;
+  private socket: Socket;
 
-    constructor(){
-         // Fallback to localhost if environment variable is not set
-         const socketUrl = process.env.NEXT_PUBLIC_BASE_API_URL || "http://localhost:4000";
-         this.socket = io(socketUrl, {
-            withCredentials: false, // Set to false when server uses origin: "*"
-            // transports: ['polling', 'websocket'], // Try polling first, then websocket
-            upgrade: true,
-            rememberUpgrade: false,
-            reconnection: true,
-            reconnectionDelay: 1000,
-            reconnectionAttempts: 5
-         });
+  constructor() {
+    const socketUrl =
+      process.env.NEXT_PUBLIC_BASE_API_URL || "http://localhost:4000";
 
-         this.defineListeners()
-    }
+    this.socket = io(socketUrl, {
+      withCredentials: false,
+      upgrade: true,
+      rememberUpgrade: false,
+      reconnection: true,
+      reconnectionAttempts: MAX_ATTEMPTS,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 10000,
+      randomizationFactor: 0.5,
+      timeout: 20000,
+    });
 
-    private defineListeners(){
-        this.socket.on("connect",()=>{logger.log("connected")});
-        this.socket.on("disconnect",()=>{logger.log("disconnected")});
+    this.defineListeners();
+  }
 
-        this.socket.on(serverToClientEvent.RESET,()=>{
-            logger.log("Event received",serverToClientEvent.RESET);
+  private defineListeners() {
+    this.socket.on("connect", () => {
+      logger.log("connected");
+      store.dispatch(setConnected());
+    });
 
-            handleResetResponseFromServer()
-        })
+    this.socket.on("disconnect", () => {
+      logger.log("disconnected");
+      // Manager will start reconnecting; status updates via reconnect_attempt
+      store.dispatch(setReconnecting(0));
+    });
 
-        this.socket.on(serverToClientEvent.INIT,(data: initResponseFromSocket)=>{
-            logger.log("Event received",serverToClientEvent.INIT);
-            logger.log("and data is ", data);
+    this.socket.on("connect_error", () => {
+      logger.log("connect_error");
+      const { status, attempt } = store.getState().connection;
+      // First fail happens before reconnect_attempt; keep banner in retry state
+      if (status === "connected" || status === "failed") return;
+      store.dispatch(setReconnecting(attempt || 1));
+    });
 
-            handleInitResponseFromServer(data)
-        })
+    this.socket.io.on("reconnect_attempt", (attempt: number) => {
+      logger.log("reconnect_attempt", attempt);
+      store.dispatch(setReconnecting(attempt));
+    });
 
-        this.socket.on(serverToClientEvent.PLAY,(data)=>{
-            logger.log("Event received",serverToClientEvent.PLAY, data);
+    this.socket.io.on("reconnect", (attempt: number) => {
+      logger.log("reconnect", attempt);
+      store.dispatch(setConnected());
+    });
 
-            handlePlayFromServer(data)
-        })
+    this.socket.io.on("reconnect_failed", () => {
+      logger.log("reconnect_failed");
+      store.dispatch(setFailed());
+    });
 
-        this.socket.on(serverToClientEvent.PAUSE,(data)=>{
-            logger.log("Event received",serverToClientEvent.PAUSE, data);
+    this.socket.on(serverToClientEvent.RESET, () => {
+      logger.log("Event received", serverToClientEvent.RESET);
+      handleResetResponseFromServer();
+    });
 
-            handlePauseFromServer(data)
-        })
+    this.socket.on(serverToClientEvent.INIT, (data: initResponseFromSocket) => {
+      logger.log("Event received", serverToClientEvent.INIT);
+      logger.log("and data is ", data);
+      handleInitResponseFromServer(data);
+    });
 
-        this.socket.on(serverToClientEvent.SEEK,(data)=>{
-            logger.log("Event received",serverToClientEvent.SEEK);
+    this.socket.on(serverToClientEvent.PLAY, (data) => {
+      logger.log("Event received", serverToClientEvent.PLAY, data);
+      handlePlayFromServer(data);
+    });
 
-            handleSeekFromServer(data)
-        })
+    this.socket.on(serverToClientEvent.PAUSE, (data) => {
+      logger.log("Event received", serverToClientEvent.PAUSE, data);
+      handlePauseFromServer(data);
+    });
 
+    this.socket.on(serverToClientEvent.SEEK, (data) => {
+      logger.log("Event received", serverToClientEvent.SEEK);
+      handleSeekFromServer(data);
+    });
+  }
 
+  /** After reconnect_failed, call this to start a fresh attempt cycle. */
+  retryConnect() {
+    store.dispatch(setConnecting());
+    this.socket.connect();
+  }
 
+  get isConnected() {
+    return this.socket.connected;
+  }
 
-    }
+  initVideo({ videoId }: { videoId: string }) {
+    this.socket.emit(clientToServerEvent.INIT, { videoId });
+  }
 
-    // User -> server -> expect that user
-    // pushUpdates(data:{action:"init", data:any}){
-    //     this.socket.emit("update",data)
-    // }
+  resetVideo() {
+    logger.log("resetVideo");
+    this.socket.emit(clientToServerEvent.RESET);
+  }
 
-    initVideo({videoId}:{videoId:string}){
-        this.socket.emit(clientToServerEvent.INIT,{videoId})
-    }
+  play(currentTime?: number) {
+    logger.log("play", currentTime);
+    this.socket.emit(clientToServerEvent.PLAY, {
+      currentTime: currentTime ?? 0,
+    });
+  }
 
-    resetVideo(){
-        logger.log("resetVideo")
-        this.socket.emit(clientToServerEvent.RESET)
-    }
+  pause(currentTime?: number) {
+    logger.log("pause", currentTime);
+    this.socket.emit(clientToServerEvent.PAUSE, {
+      currentTime: currentTime ?? 0,
+    });
+  }
 
-    play(currentTime?: number){
-        logger.log("play", currentTime)
-        this.socket.emit(clientToServerEvent.PLAY, { currentTime: currentTime ?? 0 })
-    }
+  seeked(data: { seekTo: number }) {
+    logger.log("seeked", data);
+    this.socket.emit(clientToServerEvent.SEEK, data);
+  }
 
-    pause(currentTime?: number){
-        logger.log("pause", currentTime)
-        this.socket.emit(clientToServerEvent.PAUSE, { currentTime: currentTime ?? 0 })
-    }
-
-    seeked(data:{seekTo:number}){
-        logger.log("seeked", data)
-        this.socket.emit(clientToServerEvent.SEEK, data)
-    }
-
-    ended(){
-        logger.log("ended");
-        this.socket.emit(clientToServerEvent.ENDED)
-    }
-
+  ended() {
+    logger.log("ended");
+    this.socket.emit(clientToServerEvent.ENDED);
+  }
 }
 
 export const socketServiceInstance = new SocketService();
